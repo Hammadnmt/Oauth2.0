@@ -22,9 +22,12 @@ export default passport.use(
         User.findOne({ googleId: profile.id })
           .then((existingUser) => {
             if (existingUser) {
-              // User already exists, return the user
-              console.log("User already exists:", existingUser);
-              return done(null, existingUser);
+              return done(null, {
+                id: profile.id,
+                username: profile.displayName,
+                emails: profile.emails[0].value,
+                provider: "google",
+              });
             } else {
               // Create a new user
               const newUser = new User({
@@ -34,14 +37,19 @@ export default passport.use(
                 googleId: profile.id,
                 profilePhoto: profile.photos[0].value,
               });
-              return newUser.save().then((user) => done(null, user));
+              return newUser.save().then((user) =>
+                done(null, {
+                  id: user._id,
+                  username: user.username,
+                  email: user.email,
+                })
+              );
             }
           })
           .catch((err) => done(err, null));
       } catch (error) {
         done(error, null);
       }
-      done(null, profile);
     }
   )
 );

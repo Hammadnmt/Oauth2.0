@@ -5,6 +5,7 @@ import "dotenv/config.js";
 import connectDB from "./config/connection.mjs";
 import authRoutes from "./routes/authRoutes.mjs";
 import "./strategy/google-auth20.mjs";
+import "./strategy/local-strategy.mjs";
 
 connectDB();
 const app = express();
@@ -29,7 +30,7 @@ app.get("/", (req, res) => {
 });
 app.get("/dashboard", (req, res) => {
   if (req.isAuthenticated()) {
-    res.send(`Welcome ${req.user.displayName}`);
+    res.send(`Welcome ${req.user.username}`);
   } else {
     res.status(401).send("Unauthorized");
   }

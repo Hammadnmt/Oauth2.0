@@ -10,10 +10,10 @@ export function genToken(user) {
   };
   try {
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: "1d", // Token expiration time
+      expiresIn: "15s", // Token expiration time
     });
     return token;
   } catch (error) {
-    console.error("Error generating token:", error);
+    console.error("Error generating token:");
   }
 }

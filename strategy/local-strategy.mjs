@@ -26,11 +26,16 @@ export default passport.use(
           console.log("User not found");
           return done(null, false, { message: "User not found" });
         }
+        if (userExists.provider !== "local") {
+          console.log("User is not local user");
+          return done(null, false, { message: "User is not a local user" });
+        }
         done(null, {
           id: userExists._id,
           username: userExists.username,
           email: userExists.email,
           provider: "local",
+          role: userExists.role,
         });
       } catch (error) {
         return done(error, null);

@@ -4,6 +4,8 @@ import passport from "passport";
 import "dotenv/config.js";
 import connectDB from "./config/connection.mjs";
 import authRoutes from "./routes/authRoutes.mjs";
+import userRoutes from "./routes/userRoutes.mjs";
+import cookieParser from "cookie-parser";
 import "./strategy/google-auth20.mjs";
 import "./strategy/local-strategy.mjs";
 
@@ -22,6 +24,7 @@ app.use(
 );
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 app.use(passport.initialize());
 app.use(passport.session());
 app.get("/", (req, res) => {
@@ -36,6 +39,7 @@ app.get("/dashboard", (req, res) => {
   }
 });
 app.use("/api/auth", authRoutes);
+app.use("/api/user", userRoutes);
 
 app.listen(process.env.PORT || 3000, () => {
   console.log(`Server is running on port ${process.env.PORT || 3000}`);

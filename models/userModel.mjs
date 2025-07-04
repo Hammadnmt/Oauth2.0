@@ -26,7 +26,11 @@ const userSchema = new Schema(
     profilePhoto: {
       type: String,
     },
-
+    role: {
+      type: String,
+      enum: ["user", "admin"],
+      default: "user",
+    },
     // Additional info you may collect after sign-up
     phone: {
       type: String,
@@ -47,6 +51,11 @@ const userSchema = new Schema(
     },
     bio: {
       type: String,
+    },
+    refresh_token: {
+      type: String,
+      // This will store the refresh token for the user
+      // It can be used to generate new access tokens
     },
   },
   { timestamps: true }

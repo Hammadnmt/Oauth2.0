@@ -7,6 +7,28 @@ passport.serializeUser((user, done) => {
 });
 
 passport.deserializeUser((user, done) => {
+  try {
+    // If user is already serialized, we can directly return it
+    if (user && user.id) {
+      return done(null, user);
+    }
+    // If user is not serialized, we can fetch it from the database
+    User.findById(user.id)
+      .then((foundUser) => {
+        if (!foundUser) {
+          return done(new Error("User not found"), null);
+        }
+        done(null, {
+          id: foundUser._id,
+          username: foundUser.username,
+          email: foundUser.email,
+          provider: foundUser.provider,
+          role: foundUser.role,
+        });
+      })
+      .catch((err) => done(err, null));
+  } catch (error) {}
+  console.log("Deserializing user:", user);
   done(null, user);
 });
 export default passport.use(
@@ -25,8 +47,9 @@ export default passport.use(
               return done(null, {
                 id: profile.id,
                 username: profile.displayName,
-                emails: profile.emails[0].value,
+                email: profile.emails[0].value,
                 provider: "google",
+                role: existingUser.role,
               });
             } else {
               // Create a new user

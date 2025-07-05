@@ -10,7 +10,7 @@ export function genToken(user) {
   };
   try {
     const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: "15s", // Token expiration time
+      expiresIn: "1h", // Token expiration time
     });
     return token;
   } catch (error) {

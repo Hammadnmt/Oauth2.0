@@ -1,35 +1,23 @@
-import { User } from "../models/userModel.mjs";
-import { genToken } from "../utils/genToken.mjs";
-import { genRefreshToken } from "../utils/genRefreshToken.mjs";
-import decodeTKN from "../utils/decodeToken.mjs";
-import decodeRefreshTKN from "../utils/decodeRefreshTKN.mjs";
+import authService from "../services/authService.mjs";
+import { clearCookies } from "../utils/cookieClear.mjs";
 
 export async function Login(req, res) {
   try {
-    const token = genToken(req.user);
-    const refreshToken = genRefreshToken(req.user);
-    await User.updateOne(
-      { email: req.user.email },
-      {
-        refresh_token: refreshToken,
-      }
-    );
-
-    console.log("User found and refresh token saved:");
+    const { token, refreshToken } = await authService.Login(req.user);
     res.cookie("accessToken", token, {
       httpOnly: true,
-      secure: true, // Set to true in production (HTTPS)
       sameSite: "Strict",
-      maxAge: 15 * 60 * 1000, // 15 mins
+      maxAge: 15 * 60 * 1000,
     });
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      secure: true,
       sameSite: "Strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    res.send("Logged IN");
+    res.status(200).json({
+      message: "Login successful",
+    });
   } catch (error) {
     console.error("Login error:", error);
     return res.status(500).json({ message: "Login failed" });
@@ -38,11 +26,9 @@ export async function Login(req, res) {
 
 export async function Logout(req, res) {
   try {
-    console.log("logout", req.user);
-    await User.findOneAndUpdate({ email: req.user.email }, { refresh_token: null });
-    res.clearCookie("accessToken");
-    res.clearCookie("refreshToken");
-    res.send("Logged out successfully");
+    await authService.Logout(req.user.email);
+    clearCookies(res, ["accessToken", "refreshToken"]);
+    res.status(200).json({ message: "Logout successful" });
   } catch (error) {
     console.error("Logout error:", error);
     return res.status(500).json({ message: "Logout failed" });
@@ -53,19 +39,7 @@ export async function refreshToken(req, res) {
   try {
     console.log("Refreshing token for user:", req.user);
     const refreshToken = req.cookies?.refreshToken;
-    if (!refreshToken) return res.status(401).json({ message: "Missing token" });
-
-    const decoded = decodeRefreshTKN(refreshToken);
-    const user = await User.findOne({ email: decoded.email });
-    if (!user || user.refresh_token !== refreshToken) {
-      return res.status(403).json({ message: "Invalid or reused token" });
-    }
-
-    // Rotate tokens
-    const newAccessToken = genToken(user);
-    const newRefreshToken = genRefreshToken(user);
-    user.refresh_token = newRefreshToken;
-    await user.save();
+    const { newAccessToken, newRefreshToken } = await authService.RefreshToken(refreshToken);
 
     res
       .cookie("refreshToken", newRefreshToken, {

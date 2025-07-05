@@ -1,19 +1,14 @@
-import { User } from "../models/userModel.mjs";
-import { genToken } from "../utils/genToken.mjs";
-import { genRefreshToken } from "../utils/genRefreshToken.mjs";
+import googleService from "../services/googleService.mjs";
 
 export async function googleCallback(req, res) {
   try {
-    const token = genToken(req.user);
-    const refreshToken = genRefreshToken(req.user);
-    await User.updateOne(
-      { email: req.user.email },
-      {
-        refresh_token: refreshToken,
-      }
-    );
-    console.log("Refresh token saved for user:", req.user.email);
+    console.log("Google callback user:", req.user);
+    const { token, refreshToken } = await googleService.googleCallback(req.user);
     res.cookie("accessToken", token, {
+      httpOnly: true,
+      sameSite: "Strict",
+    });
+    res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
       sameSite: "Strict",
     });
@@ -23,5 +18,9 @@ export async function googleCallback(req, res) {
     });
   } catch (error) {
     console.error("Error in Google callback:", error);
+    res.status(500).json({
+      message: "Login failed",
+      error: error.message,
+    });
   }
 }

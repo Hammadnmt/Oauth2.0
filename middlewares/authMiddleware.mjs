@@ -3,16 +3,18 @@ import decodeTKN from "../utils/decodeToken.mjs";
 export default async function auth(req, res, next) {
   try {
     const token = req.cookies?.accessToken;
+    console.log("token", token);
     if (!token) {
       return res.status(401).json({ message: "Access token missing" });
     }
 
     const decodedUser = decodeTKN(token);
+    console.log("in auth middleware", decodedUser);
     if (!decodedUser) {
       return res.status(401).json({ message: "Invalid or expired token" });
     }
 
-    req.user = decodedUser; // Attach user info to request
+    req.user = decodedUser;
     next();
   } catch (error) {
     console.error("Auth middleware error:", error);

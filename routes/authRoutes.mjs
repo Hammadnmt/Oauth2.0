@@ -7,21 +7,6 @@ import { googleCallback } from "../controllers/googleController.mjs";
 import auth from "../middlewares/authMiddleware.mjs";
 const router = Router();
 
-// router.post(
-//   "/login",
-//   (req, res, next) => {
-//     passport.authenticate("local", (err, user, info) => {
-//       if (err) {
-//         return next(err);
-//       }
-//       if (!user) {
-//         return res.status(401).json({ message: info.message || "Authentication failed" });
-//       }
-//     });
-//   },
-//   Login
-// );
-
 router.post("/login", (req, res, next) => {
   passport.authenticate("local", (err, user, info) => {
     if (err) return next(err);
@@ -38,7 +23,7 @@ router.post("/login", (req, res, next) => {
     });
   })(req, res, next);
 });
-router.post("/logout", auth, Logout);
+router.post("/logout", Logout);
 router.post("/refresh-token", refreshToken);
 router.get("/google", passport.authenticate("google"), (req, res) => {
   console.log("Google authentication successful");

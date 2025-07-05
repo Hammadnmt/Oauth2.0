@@ -27,17 +27,22 @@ export async function Login(req, res) {
       httpOnly: true,
       secure: true,
       sameSite: "Strict",
-      path: "/refresh-token",
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
     res.send("Logged IN");
-  } catch (error) {}
+  } catch (error) {
+    console.error("Login error:", error);
+    return res.status(500).json({ message: "Login failed" });
+  }
 }
 
 export async function Logout(req, res) {
   try {
-    await User.UpdateOne({ email: req.user.email }, { refresh_token: null });
+    console.log("logout", req.user);
+    await User.findOneAndUpdate({ email: req.user.email }, { refresh_token: null });
     res.clearCookie("accessToken");
+    res.clearCookie("refreshToken");
+    res.send("Logged out successfully");
   } catch (error) {
     console.error("Logout error:", error);
     return res.status(500).json({ message: "Logout failed" });
@@ -46,17 +51,22 @@ export async function Logout(req, res) {
 
 export async function refreshToken(req, res) {
   try {
-    // const refreshToken = req.cookies?.refreshToken;
+    console.log("Refreshing token for user:", req.user);
+    const refreshToken = req.cookies?.refreshToken;
+    if (!refreshToken) return res.status(401).json({ message: "Missing token" });
+
     const decoded = decodeRefreshTKN(refreshToken);
-    console.log("Refresh token:", req.cookies, decoded);
     const user = await User.findOne({ email: decoded.email });
-    if (refreshToken != user.refresh_token) {
-      return res.status(400).json({ message: "Bad Request" });
+    if (!user || user.refresh_token !== refreshToken) {
+      return res.status(403).json({ message: "Invalid or reused token" });
     }
-    const newAccessToken = genToken(req.user);
-    const newRefreshToken = genRefreshToken(req.user);
+
+    // Rotate tokens
+    const newAccessToken = genToken(user);
+    const newRefreshToken = genRefreshToken(user);
     user.refresh_token = newRefreshToken;
     await user.save();
+
     res
       .cookie("refreshToken", newRefreshToken, {
         httpOnly: true,
@@ -68,6 +78,6 @@ export async function refreshToken(req, res) {
       .json({ accessToken: newAccessToken });
   } catch (error) {
     console.error("Refresh token error:", error);
-    return res.status(500).json({ message: "Failed to refresh token" });
+    return res.status(403).json({ message: "Token invalid or expired" });
   }
 }

@@ -9,11 +9,11 @@ export async function Login(req, res) {
       sameSite: "Strict",
       maxAge: 15 * 60 * 1000,
     });
-
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
-      sameSite: "Strict",
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
     res.status(200).json({
       message: "Login successful",
@@ -28,6 +28,14 @@ export async function Logout(req, res) {
   try {
     await authService.Logout(req.user.email);
     clearCookies(res, ["accessToken", "refreshToken"]);
+    req.logOut(
+      {
+        keepSessionInfo: false, // Ensure session is cleared
+      },
+      (error) => {
+        console.log(error);
+      }
+    );
     res.status(200).json({ message: "Logout successful" });
   } catch (error) {
     console.error("Logout error:", error);
